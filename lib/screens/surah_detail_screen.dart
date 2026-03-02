@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/quran_provider.dart';
 import '../providers/bookmark_provider.dart';
 import '../providers/audio_provider.dart';
@@ -8,6 +9,8 @@ import '../providers/engagement_provider.dart';
 import '../models/surah.dart';
 import '../constants/app_colors.dart';
 import '../constants/quran_fonts.dart';
+import '../providers/quran_settings_provider.dart';
+import '../widgets/next_surah_card.dart';
 
 class SurahDetailScreen extends StatefulWidget {
   final Surah surah;
@@ -24,9 +27,13 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   final ItemPositionsListener _itemPositionsListener = ItemPositionsListener.create();
   int? _lastScrolledAyah;
 
+  double _arabicFontSize = 26.0;
+  double _translationFontSize = 14.0;
+
   @override
   void initState() {
     super.initState();
+    _loadFontSize();
 
     // Start engagement tracking
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -42,6 +49,85 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         });
       }
     });
+  }
+
+  Future<void> _loadFontSize() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _arabicFontSize = prefs.getDouble('arabic_font_size') ?? 26.0;
+      _translationFontSize = prefs.getDouble('translation_font_size') ?? 14.0;
+    });
+  }
+
+  Future<void> _saveFontSize() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('arabic_font_size', _arabicFontSize);
+    await prefs.setDouble('translation_font_size', _translationFontSize);
+  }
+
+  void _showFontSizeSheet() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Ukuran Teks',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              const Text('Arab', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+              Row(
+                children: [
+                  const Icon(Icons.text_fields, size: 16, color: AppColors.textSecondary),
+                  Expanded(
+                    child: Slider(
+                      value: _arabicFontSize,
+                      min: 18,
+                      max: 42,
+                      divisions: 12,
+                      activeColor: AppColors.primaryBlue,
+                      onChanged: (val) {
+                        setModalState(() => _arabicFontSize = val);
+                        setState(() => _arabicFontSize = val);
+                        _saveFontSize();
+                      },
+                    ),
+                  ),
+                  const Icon(Icons.text_fields, size: 22, color: AppColors.textSecondary),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text('Terjemahan', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+              Row(
+                children: [
+                  const Icon(Icons.text_fields, size: 16, color: AppColors.textSecondary),
+                  Expanded(
+                    child: Slider(
+                      value: _translationFontSize,
+                      min: 11,
+                      max: 22,
+                      divisions: 11,
+                      activeColor: AppColors.primaryBlue,
+                      onChanged: (val) {
+                        setModalState(() => _translationFontSize = val);
+                        setState(() => _translationFontSize = val);
+                        _saveFontSize();
+                      },
+                    ),
+                  ),
+                  const Icon(Icons.text_fields, size: 22, color: AppColors.textSecondary),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -75,9 +161,16 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         centerTitle: true,
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.format_size),
+            tooltip: 'Ukuran teks',
+            onPressed: _showFontSizeSheet,
+          ),
+        ],
       ),
-      body: Consumer2<QuranProvider, AudioProvider>(
-        builder: (context, provider, audioProvider, child) {
+      body: Consumer3<QuranProvider, AudioProvider, QuranSettingsProvider>(
+        builder: (context, provider, audioProvider, quranSettings, child) {
           // Auto-scroll when ayah changes during audio playback
           if (audioProvider.currentSurahNumber == widget.surah.number &&
               audioProvider.currentAyahNumber != null &&
@@ -147,14 +240,32 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             );
           }
 
+          Surah? nextSurah;
+          if (widget.surah.number < 114 && provider.surahs.isNotEmpty) {
+            final idx = provider.surahs.indexWhere((s) => s.number == widget.surah.number + 1);
+            if (idx != -1) nextSurah = provider.surahs[idx];
+          }
+
           return ScrollablePositionedList.builder(
             itemScrollController: _itemScrollController,
             itemPositionsListener: _itemPositionsListener,
             padding: const EdgeInsets.all(16),
-            itemCount: surahDetail.ayahs.length + 1,
+            itemCount: surahDetail.ayahs.length + 1 + (nextSurah != null ? 1 : 0),
             itemBuilder: (context, index) {
               if (index == 0) {
                 return _SurahHeader(surah: widget.surah);
+              }
+
+              if (nextSurah != null && index == surahDetail.ayahs.length + 1) {
+                return NextSurahCard(
+                  nextSurah: nextSurah,
+                  onTap: () => Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SurahDetailScreen(surah: nextSurah!),
+                    ),
+                  ),
+                );
               }
 
               final ayah = surahDetail.ayahs[index - 1];
@@ -170,8 +281,10 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 surahName: widget.surah.name,
                 ayahNumber: ayah.numberInSurah,
                 arabicText: ayah.text,
-                translation: translation?.text,
+                translation: quranSettings.showTranslation ? translation?.text : null,
                 totalAyahs: widget.surah.numberOfAyahs,
+                arabicFontSize: _arabicFontSize,
+                translationFontSize: _translationFontSize,
               );
             },
           );
@@ -248,6 +361,8 @@ class _AyahCard extends StatelessWidget {
   final String arabicText;
   final String? translation;
   final int totalAyahs;
+  final double arabicFontSize;
+  final double translationFontSize;
 
   const _AyahCard({
     super.key,
@@ -257,6 +372,8 @@ class _AyahCard extends StatelessWidget {
     required this.arabicText,
     this.translation,
     required this.totalAyahs,
+    required this.arabicFontSize,
+    required this.translationFontSize,
   });
 
   @override
@@ -378,9 +495,9 @@ class _AyahCard extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text(
                   arabicText,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: QuranFonts.uthmanic,
-                    fontSize: 26,
+                    fontSize: arabicFontSize,
                     height: 2,
                     color: AppColors.textPrimary,
                   ),
@@ -393,8 +510,8 @@ class _AyahCard extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(
                     translation!,
-                    style: const TextStyle(
-                      fontSize: 14,
+                    style: TextStyle(
+                      fontSize: translationFontSize,
                       height: 1.7,
                       color: AppColors.textSecondary,
                     ),

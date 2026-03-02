@@ -4,6 +4,7 @@ import '../constants/app_colors.dart';
 import '../providers/prayer_provider.dart';
 import '../providers/notification_settings_provider.dart';
 import '../widgets/prayer_header_widget.dart';
+import 'qibla_screen.dart';
 
 class PrayerTabScreen extends StatefulWidget {
   const PrayerTabScreen({super.key});
@@ -122,6 +123,15 @@ class _PrayerTabScreenState extends State<PrayerTabScreen> {
                         ),
                       ],
                       const SizedBox(height: 24),
+                      _QiblaCard(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const QiblaScreen(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
                       const Text(
                         'Pilih Kota',
                         style: TextStyle(
@@ -234,6 +244,67 @@ class _ErrorCard extends StatelessWidget {
           const SizedBox(height: 12),
           ElevatedButton(onPressed: onRetry, child: const Text('Coba Lagi')),
         ],
+      ),
+    );
+  }
+}
+
+class _QiblaCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _QiblaCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: AppColors.primaryGradient,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primaryBlue.withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.explore, color: Colors.white, size: 26),
+            ),
+            const SizedBox(width: 16),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Kompas Qiblat',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Temukan arah kiblat dengan kompas',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+          ],
+        ),
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../constants/app_colors.dart';
 import '../providers/notification_settings_provider.dart';
+import '../providers/quran_settings_provider.dart';
 import 'notification_settings_screen.dart';
 import 'about_screen.dart';
 
@@ -22,9 +23,8 @@ class ProfileScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Consumer<NotificationSettingsProvider>(
-            builder: (context, notificationProvider, child) {
-              // Count enabled notifications
+          Consumer2<NotificationSettingsProvider, QuranSettingsProvider>(
+            builder: (context, notificationProvider, quranSettings, child) {
               int enabledCount = 0;
               if (notificationProvider.fajrEnabled) enabledCount++;
               if (notificationProvider.dhuhrEnabled) enabledCount++;
@@ -52,6 +52,16 @@ class ProfileScreen extends StatelessWidget {
                         ),
                       );
                     },
+                  ),
+                  _SettingsItem(
+                    icon: Icons.translate,
+                    title: 'Terjemahan Al-Qur\'an',
+                    subtitle: 'Tampilkan terjemahan pada ayat',
+                    trailing: Switch(
+                      value: quranSettings.showTranslation,
+                      activeThumbColor: AppColors.primaryBlue,
+                      onChanged: (val) => quranSettings.setShowTranslation(val),
+                    ),
                   ),
                 ],
               );
@@ -138,10 +148,11 @@ class _SettingsSection extends StatelessWidget {
                             ),
                           )
                         : null,
-                    trailing: const Icon(
-                      Icons.chevron_right,
-                      color: AppColors.textSecondary,
-                    ),
+                    trailing: item.trailing ??
+                        const Icon(
+                          Icons.chevron_right,
+                          color: AppColors.textSecondary,
+                        ),
                     onTap: item.onTap,
                   ),
                   if (index < items.length - 1)
@@ -160,12 +171,14 @@ class _SettingsItem {
   final IconData icon;
   final String title;
   final String? subtitle;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
+  final Widget? trailing;
 
   _SettingsItem({
     required this.icon,
     required this.title,
     this.subtitle,
-    required this.onTap,
+    this.onTap,
+    this.trailing,
   });
 }
