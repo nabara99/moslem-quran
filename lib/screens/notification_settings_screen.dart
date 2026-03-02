@@ -216,10 +216,6 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
             'Alarm & Pengingat',
             _permissionStatus['exactAlarm'] ?? false,
           ),
-          _buildPermissionItem(
-            'Hemat Baterai (opsional)',
-            _permissionStatus['batteryOptimization'] ?? false,
-          ),
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,

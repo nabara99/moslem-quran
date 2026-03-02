@@ -79,15 +79,6 @@ class NotificationService {
       }
     }
 
-    // Also request ignoreBatteryOptimizations to prevent app from being killed
-    final batteryStatus = await Permission.ignoreBatteryOptimizations.status;
-    debugPrint('[Notification] Battery optimization status: $batteryStatus');
-
-    if (!batteryStatus.isGranted) {
-      final batteryPermission = await Permission.ignoreBatteryOptimizations.request();
-      debugPrint('[Notification] Battery optimization permission: $batteryPermission');
-    }
-
     // Request iOS permissions
     final iosResult = await _notifications
         .resolvePlatformSpecificImplementation<
@@ -111,9 +102,8 @@ class NotificationService {
   Future<bool> checkAllPermissions() async {
     final notification = await Permission.notification.isGranted;
     final exactAlarm = await Permission.scheduleExactAlarm.isGranted;
-    final battery = await Permission.ignoreBatteryOptimizations.isGranted;
 
-    debugPrint('[Notification] Permission check - notification: $notification, exactAlarm: $exactAlarm, battery: $battery');
+    debugPrint('[Notification] Permission check - notification: $notification, exactAlarm: $exactAlarm');
 
     return notification && exactAlarm;
   }
@@ -123,7 +113,6 @@ class NotificationService {
     return {
       'notification': await Permission.notification.isGranted,
       'exactAlarm': await Permission.scheduleExactAlarm.isGranted,
-      'batteryOptimization': await Permission.ignoreBatteryOptimizations.isGranted,
     };
   }
 
