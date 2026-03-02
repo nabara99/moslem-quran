@@ -6,6 +6,7 @@ import 'providers/bookmark_provider.dart';
 import 'providers/audio_provider.dart';
 import 'providers/engagement_provider.dart';
 import 'providers/notification_settings_provider.dart';
+import 'providers/quran_settings_provider.dart';
 import 'screens/main_navigation_screen.dart';
 import 'constants/app_colors.dart';
 import 'services/notification_service.dart';
@@ -33,6 +34,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AudioProvider()),
         ChangeNotifierProvider(create: (_) => EngagementProvider()),
         ChangeNotifierProvider(create: (_) => NotificationSettingsProvider()),
+        ChangeNotifierProvider(create: (_) => QuranSettingsProvider()),
       ],
       child: MaterialApp(
         title: 'Moslem Quran',
